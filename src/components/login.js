@@ -63,30 +63,36 @@ function Login() {
   const getNetworkInfo = () => {
     if (navigator.connection) {
       const { effectiveType, downlink } = navigator.connection;
-
+  
       let connectionSpeed = 'Unknown';
-      let connectionType = downlink > 1 ? 'WiFi' : 'Mobile Data';
-
+      let connectionType = 'Unknown';
+  
+      // 🌐 Define connection type based on effectiveType
       switch (effectiveType) {
         case 'slow-2g':
         case '2g':
           connectionSpeed = '2G';
+          connectionType = 'Mobile Data';
           break;
         case '3g':
           connectionSpeed = '3G';
+          connectionType = 'Mobile Data';
           break;
         case '4g':
           connectionSpeed = downlink > 1 ? '5G' : '4G';
+          connectionType = /Mobi|Android/i.test(navigator.userAgent) ? 'Mobile Data' : 'WiFi';
           break;
         default:
           connectionSpeed = 'Unknown';
+          connectionType = 'WiFi';
       }
-
+  
       return `${connectionType} (${connectionSpeed})`;
     }
-
+  
     return 'Unknown';
   };
+  
 
   // ✅ Get Public IP
   const getPublicIP = async () => {
