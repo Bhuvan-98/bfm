@@ -1,212 +1,82 @@
-'use client';
-
-import { useState } from 'react';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import "./style.css";
 
 function Login() {
-  const [info, setInfo] = useState(null);
+  const [errorMessages, setErrorMessages] = useState({});
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
-  // ✅ Get Device Type
-  const getDeviceType = () => {
-    const ua = navigator.userAgent || 'Unknown';
-    const maxTouchPoints = navigator.maxTouchPoints || 0;
-    const hasMouse = window.matchMedia('(pointer:fine)').matches;
-    const isTouchScreen = window.matchMedia('(pointer:coarse)').matches;
+  const navigate = useNavigate();
 
-    if (/Mobi|Android/i.test(ua)) return 'Mobile';
-    if (/Tablet|iPad/i.test(ua) || (maxTouchPoints > 1 && !/Mobi/i.test(ua) && !hasMouse)) return 'Tablet';
-    if (hasMouse && maxTouchPoints > 0) return 'Laptop';
-    if (hasMouse && window.screen.width > 1440) return 'Desktop';
-
-    return 'Unknown';
-  };
-
-  // ✅ Get OS Information
-  const getOSInfo = () => {
-    const platform = navigator.platform || 'Unknown';
-    const userAgent = navigator.userAgent || 'Unknown';
-
-    if (platform.includes('Win')) return 'Windows';
-    if (platform.includes('Mac')) return 'macOS';
-    if (platform.includes('Linux')) return 'Linux';
-    if (/Android/.test(userAgent)) return 'Android';
-    if (/like Mac OS X/.test(userAgent)) return 'iOS';
-
-    return 'Unknown';
-  };
-
-  // ✅ Get Browser Information
-  const getBrowserInfo = () => {
-    const ua = navigator.userAgent || 'Unknown';
-
-    if (/Edg/.test(ua)) return { name: 'Edge', version: ua.match(/Edg\/([\d.]+)/)?.[1] || 'Unknown' };
-    if (/Chrome/.test(ua)) return { name: 'Chrome', version: ua.match(/Chrome\/([\d.]+)/)?.[1] || 'Unknown' };
-    if (/Firefox/.test(ua)) return { name: 'Firefox', version: ua.match(/Firefox\/([\d.]+)/)?.[1] || 'Unknown' };
-    if (/Safari/.test(ua) && !/Chrome/.test(ua)) return { name: 'Safari', version: ua.match(/Version\/([\d.]+)/)?.[1] || 'Unknown' };
-
-    return { name: 'Unknown', version: 'Unknown' };
-  };
-
-  // ✅ Get Network Information
-  const getNetworkInfo = () => {
-    if (navigator.connection) {
-      const { effectiveType, downlink } = navigator.connection;
-      let connectionSpeed = 'Unknown';
-      let connectionType = 'Unknown';
-
-      switch (effectiveType) {
-        case 'slow-2g':
-        case '2g':
-          connectionSpeed = '2G';
-          connectionType = 'Mobile Data';
-          break;
-        case '3g':
-          connectionSpeed = '3G';
-          connectionType = 'Mobile Data';
-          break;
-        case '4g':
-          connectionSpeed = downlink > 1 ? '5G' : '4G';
-          connectionType = /Mobi|Android/i.test(navigator.userAgent) ? 'Mobile Data' : 'WiFi';
-          break;
-        default:
-          connectionSpeed = 'Unknown';
-          connectionType = 'WiFi';
-      }
-
-      return `${connectionType} (${connectionSpeed})`;
+  // User Login info
+  const database = [
+    {
+      username: "user1",
+      password: "pass1"
+    },
+    {
+      username: "user2",
+      password: "pass2"
     }
+  ];
 
-    return 'Unknown';
+  const errors = {
+    uname: "invalid username",
+    pass: "invalid password"
   };
 
-  // ✅ Get Public IP and Location Details (with Region and City)
-  const getPublicIP = async () => {
-    try {
-      const res = await fetch('http://ip-api.com/json');
-      const data = await res.json();
+  const handleSubmit = (event) => {
+    event.preventDefault();
 
-      return {
-        ip: data.query || 'Unknown',
-        city: data.city || 'Unknown',
-        region: data.regionName || 'Unknown',
-        country: data.country || 'Unknown'
-      };
-    } catch {
-      return {
-        ip: 'Failed to fetch',
-        city: 'Unknown',
-        region: 'Unknown',
-        country: 'Unknown'
-      };
-    }
-  };
+    var { uname, pass } = document.forms[0];
 
-  const getLocation = () =>
-    new Promise(async (resolve) => {
-      if ('geolocation' in navigator) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            resolve({
-              latitude: position.coords.latitude.toFixed(6),
-              longitude: position.coords.longitude.toFixed(6),
-              accuracy: `${Math.round(position.coords.accuracy)} meters`,
-            });
-          },
-          async (error) => {
-            console.warn('Geolocation failed:', error.message);
-            const publicIpInfo = await getPublicIP();
-            resolve({
-              latitude: 'Unknown',
-              longitude: 'Unknown',
-              accuracy: `IP-based Location: ${publicIpInfo.city}, ${publicIpInfo.region}, ${publicIpInfo.country}`,
-            });
-          },
-          {
-            enableHighAccuracy: true, // Force GPS usage if available
-            timeout: 10000, // Allow enough time for accurate results
-            maximumAge: 0, // Prevent cached values
-          }
-        );
+    // Find user login info
+    const userData = database.find((user) => user.username === uname.value);
+
+    if (userData) {
+      if (userData.password !== pass.value) {
+        setErrorMessages({ name: "pass", message: errors.pass });
       } else {
-        console.warn('Geolocation not supported, using IP-based location');
-        const publicIpInfo = await getPublicIP();
-        resolve({
-          latitude: 'Unknown',
-          longitude: 'Unknown',
-          accuracy: `IP-based Location: ${publicIpInfo.city}, ${publicIpInfo.region}, ${publicIpInfo.country}`,
-        });
+        setIsSubmitted(true);
+        // Redirect to dashboard
+        navigate("/dashboard");
       }
-    });
-  
-  
-
-  
-
-  // ✅ Collect All Data
-  const getInfo = async () => {
-    const deviceType = getDeviceType();
-    const os = getOSInfo();
-    const browser = getBrowserInfo();
-    const screenResolution = `${window.screen.width} x ${window.screen.height}`;
-    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Unknown';
-    const localTime = new Date().toLocaleString();
-    const networkType = getNetworkInfo();
-    const loginTimestamp = new Date().toISOString();
-    const sessionId = `session_${Math.random().toString(36).substring(2)}`;
-    const location = await getLocation();
-    const publicIpInfo = await getPublicIP();
-
-    setInfo({
-      deviceType,
-      os,
-      browserName: browser.name,
-      browserVersion: browser.version,
-      screenResolution,
-      timezone,
-      localTime,
-      publicIp: publicIpInfo.ip,
-      city: publicIpInfo.city,
-      region: publicIpInfo.region,
-      country: publicIpInfo.country,
-      networkType,
-      loginTimestamp,
-      sessionId,
-      location,
-    });
+    } else {
+      setErrorMessages({ name: "uname", message: errors.uname });
+    }
   };
+
+  const renderErrorMessage = (name) =>
+    name === errorMessages.name && (
+      <div className="error">{errorMessages.message}</div>
+    );
+
+  const renderForm = (
+    <div className="form">
+      <form onSubmit={handleSubmit}>
+        <div className="input-container">
+          <label>Username </label>
+          <input type="text" name="uname" required />
+          {renderErrorMessage("uname")}
+        </div>
+        <div className="input-container">
+          <label>Password </label>
+          <input type="password" name="pass" required />
+          {renderErrorMessage("pass")}
+        </div>
+        <div className="button-container">
+          <input type="submit" value="Login" />
+        </div>
+      </form>
+    </div>
+  );
 
   return (
-    <div>
-      <button onClick={getInfo} style={{ padding: '10px', fontSize: '16px', marginBottom: '20px' }}>
-        Submit
-      </button>
-
-      {info && (
-        <table border="1" cellPadding="8" cellSpacing="0" style={{ borderCollapse: 'collapse', width: '100%' }}>
-          <tbody>
-            <tr><th>Device Type</th><td>{info.deviceType}</td></tr>
-            <tr><th>Operating System</th><td>{info.os}</td></tr>
-            <tr><th>Browser</th><td>{info.browserName} {info.browserVersion}</td></tr>
-            <tr><th>Screen Resolution</th><td>{info.screenResolution}</td></tr>
-            <tr><th>Timezone</th><td>{info.timezone}</td></tr>
-            <tr><th>Local Time</th><td>{info.localTime}</td></tr>
-            <tr><th>Public IP</th><td>{info.publicIp}</td></tr>
-            <tr><th>City</th><td>{info.city}</td></tr>
-            <tr><th>Region</th><td>{info.region}</td></tr>
-            <tr><th>Country</th><td>{info.country}</td></tr>
-            <tr><th>Network Type</th><td>{info.networkType}</td></tr>
-            <tr><th>Login Timestamp</th><td>{info.loginTimestamp}</td></tr>
-            <tr><th>Session ID</th><td>{info.sessionId}</td></tr>
-            <tr>
-              <th>Location</th>
-              <td>
-                {typeof info.location === 'string'
-                  ? info.location
-                  : `Lat: ${info.location.latitude}, Lng: ${info.location.longitude} (Accuracy: ${info.location.accuracy})`}
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      )}
+    <div className="app">
+      <div className="login-form">
+        <div className="title">Log In</div>
+        {isSubmitted ? <div>Redirecting to Dashboard...</div> : renderForm}
+      </div>
     </div>
   );
 }
