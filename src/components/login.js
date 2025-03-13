@@ -8,26 +8,13 @@ function Login() {
   // ✅ Get Device Type
   const getDeviceType = () => {
     const ua = navigator.userAgent || 'Unknown';
-    const platform = navigator.platform || 'Unknown';
     const maxTouchPoints = navigator.maxTouchPoints || 0;
     const hasMouse = window.matchMedia('(pointer:fine)').matches;
     const isTouchScreen = window.matchMedia('(pointer:coarse)').matches;
 
-    // Mobile
     if (/Mobi|Android/i.test(ua)) return 'Mobile';
-
-    // Tablet
-    if (
-      /Tablet|iPad/i.test(ua) || 
-      (maxTouchPoints > 1 && !/Mobi/i.test(ua) && !hasMouse)
-    ) {
-      return 'Tablet';
-    }
-
-    // Laptop
+    if (/Tablet|iPad/i.test(ua) || (maxTouchPoints > 1 && !/Mobi/i.test(ua) && !hasMouse)) return 'Tablet';
     if (hasMouse && maxTouchPoints > 0) return 'Laptop';
-
-    // Desktop
     if (hasMouse && window.screen.width > 1440) return 'Desktop';
 
     return 'Unknown';
@@ -63,11 +50,9 @@ function Login() {
   const getNetworkInfo = () => {
     if (navigator.connection) {
       const { effectiveType, downlink } = navigator.connection;
-  
       let connectionSpeed = 'Unknown';
       let connectionType = 'Unknown';
-  
-      // 🌐 Define connection type based on effectiveType
+
       switch (effectiveType) {
         case 'slow-2g':
         case '2g':
@@ -86,43 +71,75 @@ function Login() {
           connectionSpeed = 'Unknown';
           connectionType = 'WiFi';
       }
-  
+
       return `${connectionType} (${connectionSpeed})`;
     }
-  
+
     return 'Unknown';
   };
-  
 
-  // ✅ Get Public IP
+  // ✅ Get Public IP and Location Details (with Region and City)
   const getPublicIP = async () => {
     try {
-      const res = await fetch('https://api.ipify.org?format=json');
+      const res = await fetch('http://ip-api.com/json');
       const data = await res.json();
-      return data.ip || 'Unknown';
+
+      return {
+        ip: data.query || 'Unknown',
+        city: data.city || 'Unknown',
+        region: data.regionName || 'Unknown',
+        country: data.country || 'Unknown'
+      };
     } catch {
-      return 'Failed to fetch';
+      return {
+        ip: 'Failed to fetch',
+        city: 'Unknown',
+        region: 'Unknown',
+        country: 'Unknown'
+      };
     }
   };
 
-  // ✅ Get Location
   const getLocation = () =>
-    new Promise((resolve) => {
+    new Promise(async (resolve) => {
       if ('geolocation' in navigator) {
         navigator.geolocation.getCurrentPosition(
           (position) => {
             resolve({
-              latitude: position.coords.latitude,
-              longitude: position.coords.longitude,
-              accuracy: `${position.coords.accuracy} meters`,
+              latitude: position.coords.latitude.toFixed(6),
+              longitude: position.coords.longitude.toFixed(6),
+              accuracy: `${Math.round(position.coords.accuracy)} meters`,
             });
           },
-          () => resolve('Location permission denied')
+          async (error) => {
+            console.warn('Geolocation failed:', error.message);
+            const publicIpInfo = await getPublicIP();
+            resolve({
+              latitude: 'Unknown',
+              longitude: 'Unknown',
+              accuracy: `IP-based Location: ${publicIpInfo.city}, ${publicIpInfo.region}, ${publicIpInfo.country}`,
+            });
+          },
+          {
+            enableHighAccuracy: true, // Force GPS usage if available
+            timeout: 10000, // Allow enough time for accurate results
+            maximumAge: 0, // Prevent cached values
+          }
         );
       } else {
-        resolve('Geolocation not supported');
+        console.warn('Geolocation not supported, using IP-based location');
+        const publicIpInfo = await getPublicIP();
+        resolve({
+          latitude: 'Unknown',
+          longitude: 'Unknown',
+          accuracy: `IP-based Location: ${publicIpInfo.city}, ${publicIpInfo.region}, ${publicIpInfo.country}`,
+        });
       }
     });
+  
+  
+
+  
 
   // ✅ Collect All Data
   const getInfo = async () => {
@@ -132,11 +149,11 @@ function Login() {
     const screenResolution = `${window.screen.width} x ${window.screen.height}`;
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Unknown';
     const localTime = new Date().toLocaleString();
-    const publicIp = await getPublicIP();
     const networkType = getNetworkInfo();
     const loginTimestamp = new Date().toISOString();
     const sessionId = `session_${Math.random().toString(36).substring(2)}`;
     const location = await getLocation();
+    const publicIpInfo = await getPublicIP();
 
     setInfo({
       deviceType,
@@ -146,7 +163,10 @@ function Login() {
       screenResolution,
       timezone,
       localTime,
-      publicIp,
+      publicIp: publicIpInfo.ip,
+      city: publicIpInfo.city,
+      region: publicIpInfo.region,
+      country: publicIpInfo.country,
       networkType,
       loginTimestamp,
       sessionId,
@@ -170,6 +190,9 @@ function Login() {
             <tr><th>Timezone</th><td>{info.timezone}</td></tr>
             <tr><th>Local Time</th><td>{info.localTime}</td></tr>
             <tr><th>Public IP</th><td>{info.publicIp}</td></tr>
+            <tr><th>City</th><td>{info.city}</td></tr>
+            <tr><th>Region</th><td>{info.region}</td></tr>
+            <tr><th>Country</th><td>{info.country}</td></tr>
             <tr><th>Network Type</th><td>{info.networkType}</td></tr>
             <tr><th>Login Timestamp</th><td>{info.loginTimestamp}</td></tr>
             <tr><th>Session ID</th><td>{info.sessionId}</td></tr>
