@@ -68,30 +68,61 @@ function Dashboard() {
   };
 
   // ✅ Get Public IP and Location + ISP Details
- // ✅ Get Public IP and Location + ISP Details
-const getPublicIP = async () => {
-  try {
-    const res = await fetch('https://ip-api.com/json'); // Changed to HTTPS
-    const data = await res.json();
+  const getPublicIP = async () => {
+    try {
+      const isLocalhost = window.location.hostname === 'localhost';
+      const endpoint = isLocalhost
+        ? 'http://ip-api.com/json' // HTTP works on localhost
+        : 'https://ipinfo.io/json?token=YOUR_TOKEN'; // HTTPS for Vercel
+  
+      const res = await fetch(endpoint);
+      const data = await res.json();
+  
+      return {
+        ip: data.ip || data.query || 'Unknown',
+        city: data.city || 'Unknown',
+        region: data.region || data.regionName || 'Unknown',
+        country: data.country || 'Unknown',
+        isp: data.isp || data.org || 'Unknown',
+      };
+    } catch (error) {
+      console.error('Error fetching IP info:', error);
+      return {
+        ip: 'Failed to fetch',
+        city: 'Unknown',
+        region: 'Unknown',
+        country: 'Unknown',
+        isp: 'Unknown',
+      };
+    }
+  };
+  
+  // ✅ Get Private IP using WebRTC
+const getPrivateIP = () => {
+  return new Promise((resolve) => {
+    const rtc = new RTCPeerConnection({ iceServers: [] });
 
-    return {
-      ip: data.query || 'Unknown',
-      city: data.city || 'Unknown',
-      region: data.regionName || 'Unknown',
-      country: data.country || 'Unknown',
-      isp: data.isp || 'Unknown', // ➡️ Add ISP info
+    rtc.createDataChannel('');
+    rtc.createOffer()
+      .then((offer) => rtc.setLocalDescription(offer))
+      .catch(() => {});
+
+    rtc.onicecandidate = (event) => {
+      if (event && event.candidate && event.candidate.candidate) {
+        const parts = event.candidate.candidate.split(' ');
+        const ip = parts[4];
+        if (ip && ip.indexOf('.') !== -1) {
+          resolve(ip);
+          rtc.close();
+        }
+      }
     };
-  } catch {
-    return {
-      ip: 'Failed to fetch',
-      city: 'Unknown',
-      region: 'Unknown',
-      country: 'Unknown',
-      isp: 'Unknown',
-    };
-  }
+
+    setTimeout(() => {
+      resolve('Unknown');
+    }, 1000);
+  });
 };
-
 
   const getLocation = () =>
     new Promise(async (resolve) => {
@@ -143,6 +174,7 @@ const getPublicIP = async () => {
     const sessionId = `session_${Math.random().toString(36).substring(2)}`;
     const location = await getLocation();
     const publicIpInfo = await getPublicIP();
+    const privateIp = await getPrivateIP();
 
     setInfo({
       deviceType,
@@ -153,6 +185,7 @@ const getPublicIP = async () => {
       timezone,
       localTime,
       publicIp: publicIpInfo.ip,
+      privateIp, 
       city: publicIpInfo.city,
       region: publicIpInfo.region,
       country: publicIpInfo.country,
@@ -182,12 +215,13 @@ const getPublicIP = async () => {
             <tr><th>Screen Resolution</th><td>{info.screenResolution}</td></tr>
             <tr><th>Timezone</th><td>{info.timezone}</td></tr>
             <tr><th>Local Time</th><td>{info.localTime}</td></tr>
+            <tr><th>Private IP</th><td>{info.privateIp}</td></tr>
             <tr><th>Public IP</th><td>{info.publicIp}</td></tr>
             <tr><th>City</th><td>{info.city}</td></tr>
             <tr><th>Region</th><td>{info.region}</td></tr>
             <tr><th>Country</th><td>{info.country}</td></tr>
             <tr><th>Network Type</th><td>{info.networkType}</td></tr>
-            <tr><th>ISP</th><td>{info.isp}</td></tr>
+             <tr><th>ISP</th><td>{info.isp}</td></tr>
             <tr><th>Login Timestamp</th><td>{info.loginTimestamp}</td></tr>
             <tr><th>Session ID</th><td>{info.sessionId}</td></tr>
             <tr>
