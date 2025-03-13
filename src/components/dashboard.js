@@ -68,28 +68,30 @@ function Dashboard() {
   };
 
   // ✅ Get Public IP and Location + ISP Details
-  const getPublicIP = async () => {
-    try {
-      const res = await fetch('http://ip-api.com/json');
-      const data = await res.json();
+ // ✅ Get Public IP and Location + ISP Details
+const getPublicIP = async () => {
+  try {
+    const res = await fetch('https://ip-api.com/json'); // Changed to HTTPS
+    const data = await res.json();
 
-      return {
-        ip: data.query || 'Unknown',
-        city: data.city || 'Unknown',
-        region: data.regionName || 'Unknown',
-        country: data.country || 'Unknown',
-        isp: data.isp || 'Unknown', // ➡️ Add ISP info
-      };
-    } catch {
-      return {
-        ip: 'Failed to fetch',
-        city: 'Unknown',
-        region: 'Unknown',
-        country: 'Unknown',
-        isp: 'Unknown',
-      };
-    }
-  };
+    return {
+      ip: data.query || 'Unknown',
+      city: data.city || 'Unknown',
+      region: data.regionName || 'Unknown',
+      country: data.country || 'Unknown',
+      isp: data.isp || 'Unknown', // ➡️ Add ISP info
+    };
+  } catch {
+    return {
+      ip: 'Failed to fetch',
+      city: 'Unknown',
+      region: 'Unknown',
+      country: 'Unknown',
+      isp: 'Unknown',
+    };
+  }
+};
+
 
   const getLocation = () =>
     new Promise(async (resolve) => {
