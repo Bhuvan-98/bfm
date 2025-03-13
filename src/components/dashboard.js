@@ -72,8 +72,8 @@ function Dashboard() {
     try {
       const isLocalhost = window.location.hostname === 'localhost';
       const endpoint = isLocalhost
-        ? 'http://ip-api.com/json' // HTTP works on localhost
-        : 'https://ipinfo.io/json?token=YOUR_TOKEN'; // HTTPS for Vercel
+  ? 'http://ip-api.com/json'
+  : 'https://ipapi.co/json/';
   
       const res = await fetch(endpoint);
       const data = await res.json();
