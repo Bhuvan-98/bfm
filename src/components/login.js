@@ -5,6 +5,7 @@ import "./style.css";
 function Login() {
   const [errorMessages, setErrorMessages] = useState({});
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [loginAttempts, setLoginAttempts] = useState(0);
 
   const navigate = useNavigate();
 
@@ -21,8 +22,8 @@ function Login() {
   ];
 
   const errors = {
-    uname: "invalid username",
-    pass: "invalid password"
+    uname: "Invalid username",
+    pass: "Invalid password"
   };
 
   const handleSubmit = (event) => {
@@ -36,13 +37,15 @@ function Login() {
     if (userData) {
       if (userData.password !== pass.value) {
         setErrorMessages({ name: "pass", message: errors.pass });
+        setLoginAttempts((prev) => prev + 1); // Increment login attempts
       } else {
         setIsSubmitted(true);
-        // Redirect to dashboard
-        navigate("/dashboard");
+        // Redirect to dashboard and pass loginAttempts as state
+        navigate("/dashboard", { state: { loginAttempts: loginAttempts + 1 } });
       }
     } else {
       setErrorMessages({ name: "uname", message: errors.uname });
+      setLoginAttempts((prev) => prev + 1); // Increment login attempts
     }
   };
 
@@ -76,6 +79,9 @@ function Login() {
       <div className="login-form">
         <div className="title">Log In</div>
         {isSubmitted ? <div>Redirecting to Dashboard...</div> : renderForm}
+        {/* <div style={{ marginTop: "10px", color: "red" }}>
+          Login Attempts: {loginAttempts}
+        </div> */}
       </div>
     </div>
   );

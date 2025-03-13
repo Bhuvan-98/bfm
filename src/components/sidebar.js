@@ -2,7 +2,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 
 export default function Sidebar() {
     return (
-        <div className="d-flex flex-column bg-dark vh-100 p-4 shadow">
+        <div className="d-flex flex-column bg-dark  p-4 shadow">
             <h2 className="fs-4 fw-bold mb-4 text-white">Nectar</h2>
             <ul className="nav flex-column gap-2">
                 <li className="nav-item">
@@ -29,3 +29,4 @@ export default function Sidebar() {
         </div>
     );
 }
+

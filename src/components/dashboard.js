@@ -1,10 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect} from 'react';
+import {useLocation } from "react-router-dom";
+
 import Sidebar from './sidebar'; // Import Sidebar
 
 function Dashboard() {
   const [info, setInfo] = useState(null);
+  const location = useLocation();
+  const loginAttempts = location.state?.loginAttempts || 0;
 
   // ✅ Get Device Type
   const getDeviceType = () => {
@@ -194,6 +198,7 @@ const getPrivateIP = () => {
       loginTimestamp,
       sessionId,
       location,
+      loginAttempts,
     });
   };
 
@@ -203,7 +208,7 @@ const getPrivateIP = () => {
 
 
   return (
-    <div style={{ display: 'flex', height: '100vh' }}>
+    <div style={{ display: 'flex' }}>
        <Sidebar />
        <div style={{ flex: 1, padding: '20px' }}>
       {info && (
@@ -223,6 +228,7 @@ const getPrivateIP = () => {
             <tr><th>Network Type</th><td>{info.networkType}</td></tr>
              <tr><th>ISP</th><td>{info.isp}</td></tr>
             <tr><th>Login Timestamp</th><td>{info.loginTimestamp}</td></tr>
+            <tr><th>Login Attempts</th><td>{info.loginAttempts}</td></tr>
             <tr><th>Session ID</th><td>{info.sessionId}</td></tr>
             <tr>
               <th>Location</th>
